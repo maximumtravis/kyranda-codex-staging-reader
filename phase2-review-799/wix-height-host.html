@@ -33,7 +33,7 @@
       <span class="status" id="status" aria-live="polite">Loading fictional fixtures...</span>
     </div>
   </header>
-  <main><div class="frame-wrap" id="wrap"><iframe id="readerFrame" title="Fictional Phase 2 Codex reader" src="reader.html"></iframe></div></main>
+  <main><div class="frame-wrap" id="wrap"><iframe id="readerFrame" title="Fictional Phase 2 Codex reader" src="wix-reader.html"></iframe></div></main>
   <script>
     'use strict';
     const frame = document.querySelector('#readerFrame');
@@ -121,7 +121,7 @@
     });
     document.querySelector('#reconnect').addEventListener('click', () => {
       revision++;
-      frame.src = 'reader.html?revision=' + revision;
+      frame.src = 'wix-reader.html?revision=' + revision;
     });
     frame.addEventListener('load', () => setTimeout(updateStatus, 100));
     fetch('fictional-fixtures.json', {cache:'no-store'}).then(r => {
