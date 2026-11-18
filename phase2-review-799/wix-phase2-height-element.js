@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const READER_URL = 'https://maximumtravis.github.io/kyranda-codex-staging-reader/phase2-review-799/wix-height-host.html';
+  const READER_URL = 'https://maximumtravis.github.io/kyranda-codex-staging-reader/phase2-review-799/wix-height-host.html?phase2=2';
   const TRUSTED_ORIGIN = 'https://maximumtravis.github.io';
   const TAG = 'kyranda-phase2-fictional-height-host';
   class FictionalHeightHost extends HTMLElement {
