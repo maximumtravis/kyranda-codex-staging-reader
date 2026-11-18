@@ -1,6 +1,7 @@
 (() => {
   'use strict';
-  const READER_URL = 'https://maximumtravis.github.io/kyranda-codex-staging-reader/phase2-review-799/wix-height-host.html?phase2=2';
+  // Fictional Phase 2 integration lab only. This is not a production Codex host.
+  const READER_URL = 'https://maximumtravis.github.io/kyranda-codex-staging-reader/phase2-review-799/wix-height-host.html?phase2=3';
   const TRUSTED_ORIGIN = 'https://maximumtravis.github.io';
   const TAG = 'kyranda-phase2-fictional-height-host';
   class FictionalHeightHost extends HTMLElement {
@@ -33,8 +34,16 @@
           !Number.isSafeInteger(m.height) || m.height < 1 || m.height > 200000 ||
           !Number.isSafeInteger(m.width) || m.width < 1 ||
           Math.abs(m.width - this.frame.clientWidth) > 2) return;
-      this.frame.style.height = m.height + 'px';
-      this.style.height = m.height + 'px';
+      const height = m.height + 'px';
+      this.frame.style.height = height;
+      this.style.height = height;
+      // The Classic Editor's published wrapper can retain its maximum observed height
+      // after a short article replaces a long one. Update that wrapper as well so
+      // both growth and shrink are visible to Wix's section layout engine.
+      const wrapper = this.parentElement;
+      if (wrapper && wrapper.id && wrapper.id.startsWith('comp-')) {
+        wrapper.style.height = height;
+      }
       this.setAttribute('data-phase2-height', String(m.height));
     }
   }
