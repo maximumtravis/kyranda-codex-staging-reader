@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
+  <title>Kyranda Phase 2 | Fictional GitHub Pages Reader Lab</title>
+  <style>
+    :root { color-scheme: dark; font: 15px/1.45 system-ui, sans-serif; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #101421; color: #f4f1fc; }
+    header { padding: 15px max(15px, calc((100% - 1120px)/2)); background: #1c2135; border-bottom: 1px solid #616987; }
+    h1 { margin: 0; font-size: 1.35rem; }
+    p { margin: 5px 0 0; color: #d2d1e0; }
+    .tools { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
+    button { color: white; background: #39466f; border: 1px solid #798ac1; padding: 7px 12px; border-radius: 5px; cursor: pointer; }
+    button[aria-pressed="true"] { background: #7461ae; }
+    .status { font-size: .85rem; color: #c7d9ff; }
+    main { max-width: 1200px; padding: 15px; margin: 0 auto; }
+    .frame-wrap { margin: 0 auto; background: #111421; width: 100%; box-shadow: 0 0 0 1px #5d6689; }
+    iframe { width: 100%; height: 560px; display: block; border: 0; background: #141424; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Kyranda Codex | Fictional Phase 2 Reader Lab</h1>
+    <p>Independent GitHub Pages test. All article identities and copy here are fictional. No Wix data, CMS, member permissions, or approval endpoints are connected.</p>
+    <div class="tools">
+      <button type="button" data-width="full" aria-pressed="true">Desktop width</button>
+      <button type="button" data-width="375" aria-pressed="false">375px</button>
+      <button type="button" data-width="320" aria-pressed="false">320px</button>
+      <button type="button" id="reconnect">Reconnect reader</button>
+      <span class="status" id="status" aria-live="polite">Loading fictional fixtures...</span>
+    </div>
+  </header>
+  <main><div class="frame-wrap" id="wrap"><iframe id="readerFrame" title="Fictional Phase 2 Codex reader" src="reader.html"></iframe></div></main>
+  <script>
+    'use strict';
+    const frame = document.querySelector('#readerFrame');
+    const wrap = document.querySelector('#wrap');
+    const status = document.querySelector('#status');
+    const session = 'fictional-pages-phase2';
+    const startSlug = 'r-75e6f9b0fed5457d61d2cbcca35ee781';
+    const query = new URLSearchParams(location.search);
+    const campaigns = { main: 47, parental: 3 };
+    const saved = { main: 1, parental: 1 };
+    let fixture = null;
+    let revision = 0;
+    let initial = {
+      campaign: ['main','parental'].includes(query.get('campaign')) ? query.get('campaign') : 'main',
+      through: query.get('through') || '1', slug: query.get('slug') || startSlug
+    };
+    function send(body) {
+      if (frame.contentWindow) frame.contentWindow.postMessage({version: 1, session, ...body}, location.origin);
+    }
+    function choose(p) {
+      const campaign = campaigns[p.campaign] ? p.campaign : 'main';
+      const episode = Math.min(campaigns[campaign], Math.max(1, Number(p.episode) || 1));
+      return {campaign, episode, snap: fixture[campaign][episode]};
+    }
+    function read(p) {
+      const {episode, snap} = choose(p);
+      const entries = snap.entries.filter(entry =>
+        (!p.search || (entry.title + ' ' + entry.summary).toLowerCase().includes(String(p.search).toLowerCase())) &&
+        (!p.category || entry.category === p.category));
+      const slug = p.slug || entries[0]?.slug || '';
+      return {
+        status: 'ready', selectedEpisode: episode, maximumEpisode: snap.maximumEpisode,
+        entries, categories: snap.categories, article: snap.articles[slug] || null
+      };
+    }
+    function updateStatus() {
+      const doc = frame.contentDocument;
+      const body = doc?.querySelector('#reader');
+      const overflow = doc ? doc.documentElement.scrollWidth > doc.documentElement.clientWidth + 1 : false;
+      status.textContent = `Fixture ready | iframe ${frame.clientWidth}px × ${frame.clientHeight}px | ${body?.dataset.status || 'loading'} | horizontal overflow: ${overflow ? 'YES' : 'no'}`;
+    }
+    history.replaceState(initial, '', location.href);
+    window.addEventListener('popstate', event => {
+      revision++;
+      initial = event.state || initial;
+      send({type:'codex-sync', revision, phase:'loading'});
+      send({type:'codex-sync', revision, phase:'ready', initial});
+    });
+    window.addEventListener('message', ({data:m, origin, source}) => {
+      if (!fixture || origin !== location.origin || source !== frame.contentWindow || m.version !== 1) return;
+      if (m.type === 'codex-ready') send({type:'codex-init',revision,initial});
+      if (m.type === 'codex-content-height' && Number.isFinite(m.height)) {
+        frame.style.height = Math.max(1, Math.ceil(m.height)) + 'px';
+        requestAnimationFrame(updateStatus);
+      }
+      if (m.type === 'codex-route') {
+        const {campaign, episode, slug} = m.state;
+        const next = {campaign, through: String(episode), slug};
+        if (JSON.stringify(next) !== JSON.stringify(history.state)) {
+          const params = new URLSearchParams(next);
+          history.pushState(next, '', '?' + params.toString());
+        }
+      }
+      if (m.type !== 'codex-request') return;
+      const p = m.payload;
+      let value;
+      switch (m.action) {
+        case 'selection': value = {campaign:p.campaign,episode:Number(p.through || saved[p.campaign] || 1)}; break;
+        case 'commit': saved[p.campaign] = p.episode; value = true; break;
+        case 'present': value = {facts:[{label:'Role',text:'Fictional traveler'}],media:null}; break;
+        case 'read': value = read(p); break;
+        default: return;
+      }
+      send({type:'codex-response',revision:m.revision,id:m.id,ok:true,value});
+    });
+    for (const button of document.querySelectorAll('[data-width]')) button.addEventListener('click', () => {
+      const width = button.dataset.width;
+      wrap.style.maxWidth = width === 'full' ? '' : width + 'px';
+      for (const b of document.querySelectorAll('[data-width]')) b.setAttribute('aria-pressed', String(b === button));
+      requestAnimationFrame(updateStatus);
+    });
+    document.querySelector('#reconnect').addEventListener('click', () => {
+      revision++;
+      frame.src = 'reader.html?revision=' + revision;
+    });
+    frame.addEventListener('load', () => setTimeout(updateStatus, 100));
+    fetch('fictional-fixtures.json', {cache:'no-store'}).then(r => {
+      if (!r.ok) throw new Error('Fixture unavailable');
+      return r.json();
+    }).then(data => {
+      fixture = data;
+      status.textContent = 'Fixtures loaded. Connecting reader...';
+      // A ready event can fire before the JSON arrives.
+      revision++;
+      frame.src = 'reader.html?revision=' + revision;
+    }).catch(err => { status.textContent = 'Fixture load FAILED: ' + err.message; });
+    setInterval(updateStatus, 1500);
+  </script>
+</body>
+</html>
