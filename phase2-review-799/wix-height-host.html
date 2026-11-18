@@ -51,7 +51,7 @@
       through: query.get('through') || '1', slug: query.get('slug') || startSlug
     };
     function send(body) {
-      if (frame.contentWindow) frame.contentWindow.postMessage({version: 1, session, ...body}, location.origin);
+      if (frame.contentWindow) frame.contentWindow.postMessage({version: 1, session, ...body}, '*');
     }
     function choose(p) {
       const campaign = campaigns[p.campaign] ? p.campaign : 'main';
@@ -87,7 +87,7 @@
       send({type:'codex-sync', revision, phase:'ready', initial});
     });
     window.addEventListener('message', ({data:m, origin, source}) => {
-      if (!fixture || origin !== location.origin || source !== frame.contentWindow || m.version !== 1) return;
+      if (!fixture || (origin !== location.origin && origin !== 'null') || source !== frame.contentWindow || m.version !== 1) return;
       if (m.type === 'codex-ready') send({type:'codex-init',revision,initial});
       if (m.type === 'codex-content-height' && Number.isFinite(m.height)) {
         frame.style.height = Math.max(1, Math.ceil(m.height)) + 'px';
