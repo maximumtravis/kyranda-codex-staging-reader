@@ -42,6 +42,9 @@
       // both growth and shrink are visible to Wix's section layout engine.
       const wrapper = this.parentElement;
       if (wrapper && wrapper.id && wrapper.id.startsWith('comp-')) {
+        // Published Classic layouts can revert the element width to 300px.
+        // This override is limited to the independent fictional test host.
+        wrapper.style.width = 'min(980px, calc(100vw - 32px))';
         wrapper.style.height = height;
       }
       this.setAttribute('data-phase2-height', String(m.height));
