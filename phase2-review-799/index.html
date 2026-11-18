@@ -63,7 +63,8 @@
       const entries = snap.entries.filter(entry =>
         (!p.search || (entry.title + ' ' + entry.summary).toLowerCase().includes(String(p.search).toLowerCase())) &&
         (!p.category || entry.category === p.category));
-      const slug = p.slug || entries[0]?.slug || '';
+      // Directory/search responses must not silently select an article.
+      const slug = p.slug || '';
       return {
         status: 'ready', selectedEpisode: episode, maximumEpisode: snap.maximumEpisode,
         entries, categories: snap.categories, article: snap.articles[slug] || null
