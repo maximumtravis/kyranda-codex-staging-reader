@@ -27,7 +27,7 @@
     }
     receive(event) {
       if (!this.frame || event.source !== this.frame.contentWindow ||
-          event.origin !== TRUSTED_ORIGIN) return;
+          (event.origin !== TRUSTED_ORIGIN && event.origin !== 'null')) return;
       const m = event.data;
       if (!m || m.type !== 'kyranda-phase2-height' || m.version !== 1 ||
           !Number.isSafeInteger(m.height) || m.height < 1 || m.height > 200000 ||
