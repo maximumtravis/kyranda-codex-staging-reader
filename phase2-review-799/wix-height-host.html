@@ -132,7 +132,7 @@
       status.textContent = 'Fixtures loaded. Connecting reader...';
       // A ready event can fire before the JSON arrives.
       revision++;
-      frame.src = 'reader.html?revision=' + revision;
+      frame.src = 'wix-reader.html?revision=' + revision;
     }).catch(err => { status.textContent = 'Fixture load FAILED: ' + err.message; });
     setInterval(updateStatus, 1500);
   </script>
