@@ -75,7 +75,9 @@
       const body = doc?.querySelector('#reader');
       const overflow = doc ? doc.documentElement.scrollWidth > doc.documentElement.clientWidth + 1 : false;
       status.textContent = `Fixture ready | iframe ${frame.clientWidth}px × ${frame.clientHeight}px | ${body?.dataset.status || 'loading'} | horizontal overflow: ${overflow ? 'YES' : 'no'}`;
-      // Measure content, not the viewport's scrollHeight. A tall outer iframe makes\n      // scrollHeight a grow-only floor and prevents Episode 47 -> 1 contraction.\n      const height = Math.ceil(document.querySelector('header').getBoundingClientRect().height + document.querySelector('main').getBoundingClientRect().height);
+      // Measure content, not the viewport's scrollHeight. A tall outer iframe makes
+      // scrollHeight a grow-only floor and prevents Episode 47 -> 1 contraction.
+      const height = Math.ceil(document.querySelector('header').getBoundingClientRect().height + document.querySelector('main').getBoundingClientRect().height);
       const width = document.documentElement.clientWidth;
       if (height > 0 && height < 200000 && width > 0) window.parent.postMessage({type:'kyranda-phase2-height',version:1,height,width}, '*');
     }
