@@ -33,7 +33,7 @@
       <span class="status" id="status" aria-live="polite">Loading fictional fixtures...</span>
     </div>
   </header>
-  <main><div class="frame-wrap" id="wrap"><iframe id="readerFrame" title="Fictional Phase 2 Codex reader" src="wix-reader.html"></iframe></div></main>
+  <main><div class="frame-wrap" id="wrap"><iframe id="readerFrame" title="Fictional Phase 2 Codex reader" src="wix-reader-contextual-v2.html"></iframe></div></main>
   <script>
     'use strict';
     const frame = document.querySelector('#readerFrame');
@@ -123,7 +123,7 @@
     });
     document.querySelector('#reconnect').addEventListener('click', () => {
       revision++;
-      frame.src = 'wix-reader.html?revision=' + revision;
+      frame.src = 'wix-reader-contextual-v2.html?revision=' + revision;
     });
     frame.addEventListener('load', () => setTimeout(updateStatus, 100));
     fetch('fictional-fixtures.json', {cache:'no-store'}).then(r => {
@@ -134,7 +134,7 @@
       status.textContent = 'Fixtures loaded. Connecting reader...';
       // A ready event can fire before the JSON arrives.
       revision++;
-      frame.src = 'wix-reader.html?revision=' + revision;
+      frame.src = 'wix-reader-contextual-v2.html?revision=' + revision;
     }).catch(err => { status.textContent = 'Fixture load FAILED: ' + err.message; });
     setInterval(updateStatus, 1500);
   </script>
