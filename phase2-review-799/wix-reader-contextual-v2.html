@@ -24,6 +24,10 @@
 .infobox dt,.infobox dd{overflow-wrap:normal;word-break:normal;white-space:normal;min-width:0}
 /* Narrow screens need a single readable column for labels and values. */
 @media(max-width:650px){.infobox dl{grid-template-columns:minmax(0,1fr)}.infobox dt{padding-bottom:2px;border-bottom:0}.infobox dd{padding-top:0}}
+ .infobox .info-section{padding:12px;border-top:1px solid var(--line);font:12px/1.6 Arial,sans-serif}
+.infobox .info-section h4{font-size:11px;letter-spacing:.08em;text-transform:uppercase;margin:0 0 6px}
+.infobox .info-section p{margin:0}.infobox .info-section ul{list-style:none;margin:0;padding:0}
+.infobox .info-section li+li{margin-top:6px}.infobox .info-section button{border:0;padding:0;background:none;text-decoration:underline;text-align:left;font-size:inherit}
 </style></head><body><div id="reader" role="region" aria-label="Kyranda Codex"><p>Loading reader connection…</p></div><script>(() => {
   // ui/dto.mjs
   var alias = (value) => typeof value === "string" && /^r-[0-9a-f]{32}$/.test(value);
@@ -41,13 +45,21 @@
     } else if (value.article !== null) return null;
     return { status: "ready", selectedEpisode: value.selectedEpisode, maximumEpisode: value.maximumEpisode, entries, categories: [...value.categories], article };
   }
-  function reviewedPresentation(value) {
-    if (!value || !Array.isArray(value.facts) || value.facts.length > 100 || !value.facts.every((f) => f && text(f.label, 140) && text(f.text))) return { media: null, facts: [] };
-    const facts = value.facts.map((f) => ({ label: f.label, text: f.text }));
-    if (!value.media) return { media: null, facts };
+  function reviewedPresentation(value, entries = []) {
+    const empty = { media: null, facts: [], aliases: [], connections: [] };
+    if (!value || !Array.isArray(value.facts) || value.facts.length > 100 || !value.facts.every((f) => f && text(f.label, 140) && text(f.text))) return empty;
+    const facts = value.facts.filter((f) => !/^Inventory(?::|$)/i.test(f.label)).map((f) => ({ label: f.label, text: f.text }));
+    // Only an episode-filtered backend response may supply aliases or relationships.
+    const aliases = Array.isArray(value.aliases) && value.aliases.length <= 30 && value.aliases.every((a) => text(a, 140))
+      ? [...new Set(value.aliases.filter(Boolean))] : [];
+    const connections = Array.isArray(value.connections) && value.connections.length <= 100 &&
+      value.connections.every((c) => c && alias(c.slug) && text(c.title, 140) &&
+        text(c.description, 200) && entries.some((e) => e.slug === c.slug && e.title === c.title))
+      ? value.connections.map((c) => ({ slug: c.slug, title: c.title, description: c.description })) : [];
+    if (!value.media) return { media: null, facts, aliases, connections };
     const m = value.media;
-    if (!/^https:\/\/static\.wixstatic\.com\/media\/[a-zA-Z0-9_.~-]+$/.test(m.src || "") || !text(m.alt, 1000) || !text(m.caption, 1500) || !text(m.artistName, 200) || m.artistUrl && !/^https:\/\/[a-z0-9.-]+(?:\/[^\s]*)?$/.test(m.artistUrl)) return { media: null, facts };
-    return { facts, media: { src: m.src, alt: m.alt, caption: m.caption, artistName: m.artistName, artistUrl: m.artistUrl || "" } };
+    if (!/^https:\/\/static\.wixstatic\.com\/media\/[a-zA-Z0-9_.~-]+$/.test(m.src || "") || !text(m.alt, 1000) || !text(m.caption, 1500) || !text(m.artistName, 200) || m.artistUrl && !/^https:\/\/[a-z0-9.-]+(?:\/[^\s]*)?$/.test(m.artistUrl)) return { media: null, facts, aliases, connections };
+    return { facts, aliases, connections, media: { src: m.src, alt: m.alt, caption: m.caption, artistName: m.artistName, artistUrl: m.artistUrl || "" } };
   }
 
   // launch/public-campaign-progress.mjs
@@ -439,6 +451,24 @@ function setupWikiNavigation({ root, bridge, onOpen, onCategory, onDirectory }) 
         const facts = el("dl");
         for (const f of [{ label: "Category", text: article.category }, { label: "Campaign", text: state.campaign === "main" ? "Main Campaign" : "Parental Advisory" }, ...decoration.facts]) facts.append(el("dt", f.label), el("dd", f.text));
         info.append(facts);
+        if (decoration.aliases?.length) {
+          const block = el("section", void 0, "info-section");
+          block.append(el("h4", "Aliases"), el("p", decoration.aliases.join(", ")));
+          info.append(block);
+        }
+        if (decoration.connections?.length) {
+          const block = el("section", void 0, "info-section");
+          block.append(el("h4", "Connections"));
+          const list = el("ul");
+          for (const connection of decoration.connections) {
+            const item = el("li");
+            item.append(action(connection.title, () => open(connection.slug)));
+            if (connection.description) item.append(el("span", " · " + connection.description));
+            list.append(item);
+          }
+          block.append(list);
+          info.append(block);
+        }
       }
       const related = q(".related");
       related.replaceChildren();
@@ -479,7 +509,7 @@ function setupWikiNavigation({ root, bridge, onOpen, onCategory, onDirectory }) 
         let decoration = { media: null, facts: [] };
         if (dto.article && present) {
           try {
-            decoration = reviewedPresentation(await present({ campaign: request.campaign, episode: request.episode, slug: request.slug }));
+            decoration = reviewedPresentation(await present({ campaign: request.campaign, episode: request.episode, slug: request.slug }), dto.entries);
           } catch {
           }
         }
